@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Movie List</title>
+</head>
+<body>
+    <h1>Movie List</h1>
+    {% if movie_list|length > 0 %}
+        <table border="1">
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Director</th>
+                <th>Producer</th>
+                <th>Release Date</th>
+                <th>Score</th>
+                <th>People</th>
+            </tr>
+            {% for movie in movie_list %}
+                <tr>
+                    <td>{{ movie.title }}</td>
+                    <td>{{ movie.description }}</td>
+                    <td>{{ movie.director }}</td>
+                    <td>{{ movie.producer }}</td>
+                    <td>{{ movie.release_date }}</td>
+                    <td>{{ movie.rt_score }}</td>
+                    <td>
+                        {% for actor in movie.people.all %}
+                            {{ actor }}<br/>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+</body>
+</html>
