@@ -8,11 +8,10 @@ from .models import Movie, Actor, UpdateTimeStamp
 
 
 class MovieListView(ListView):
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         update_time = UpdateTimeStamp.objects.all()
         if len(update_time) > 0:
             td = datetime.utcnow().replace(tzinfo=timezone.utc) - update_time[0].last_update
-            print("timedelta = ", td.seconds)
             if td.seconds > settings.DB_REFRESH_INTERVAL_SECONDS:
                 MovieListView._refresh_data(update_time[0])
         else:
@@ -48,6 +47,9 @@ class MovieListView(ListView):
                     ))
             if len(actors) > 0:
                 Actor.objects.bulk_create(actors)
+        else:
+            print('status_code={}, url={}, message={}'.format(
+                response.status_code, response.url, response.text))
 
         response = requests.get(settings.API_BASE_URL + '/films')
         if response.status_code == 200:
@@ -74,5 +76,12 @@ class MovieListView(ListView):
                     movie_actors = Actor.objects.filter(pk__in=list(value))
                     tm = [through_model(actor_id=actor.pk, movie_id=key) for actor in movie_actors]
                     through_model.objects.bulk_create(tm)
+
+        else:
+            print('status_code={}, url={}, message={}'.format(
+                response.status_code, response.url, response.text))
+
+            # skip refresh time update if requests failed
+            return
 
         timestamp.save()
