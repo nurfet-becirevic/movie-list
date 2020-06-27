@@ -2,21 +2,21 @@ from django.db import models
 
 
 class Actor(models.Model):
-    id = models.TextField(primary_key=True)
-    name = models.TextField()
+    id = models.CharField(max_length=36, primary_key=True)
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
 
 
 class Movie(models.Model):
-    id = models.TextField(primary_key=True)
-    title = models.TextField()
+    id = models.CharField(max_length=36, primary_key=True)
+    title = models.CharField(max_length=100)
     description = models.TextField()
-    director = models.TextField()
-    producer = models.TextField()
-    release_date = models.TextField()
-    rt_score = models.TextField()
+    director = models.CharField(max_length=50)
+    producer = models.CharField(max_length=50)
+    release_date = models.PositiveIntegerField()
+    rt_score = models.PositiveIntegerField()
     people = models.ManyToManyField(Actor)
 
     def __str__(self):

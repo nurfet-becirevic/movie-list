@@ -10,8 +10,8 @@ class MovieTestCase(TestCase):
             description='Falling Star desc',
             director='John Doe',
             producer='Somebody',
-            release_date='2019',
-            rt_score='95',
+            release_date=2019,
+            rt_score=95,
         )
         self.m2 = Movie.objects.create(
             id='6789-abcd-0123',
@@ -19,8 +19,8 @@ class MovieTestCase(TestCase):
             description='Final Fantasy desc',
             director='James Bond',
             producer='Sosuke',
-            release_date='2020',
-            rt_score='91',
+            release_date=2020,
+            rt_score=91,
         )
         self.a1 = Actor.objects.create(id='1321-1322', name='Kawasaki')
         self.a2 = Actor.objects.create(id='5677-6789', name='Honda')
