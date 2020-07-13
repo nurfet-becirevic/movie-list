@@ -25,63 +25,70 @@ class MovieListView(ListView):
     @staticmethod
     def _refresh_data(timestamp):
         movie_actor = dict()
-        response = requests.get(settings.API_BASE_URL + '/people')
-        if response.status_code == 200:
-            result = response.json()
-            ids = Actor.objects.values_list('id', flat=True)
-            actors = []
-            for a in result:
-                actor_id = a.get('id')
-                if actor_id not in ids:
-                    for f in a.get('films'):
-                        movie_id = f[f.rfind('/') + 1:]
-                        mar = movie_actor.get(movie_id)
-                        if mar:
-                            mar.add(actor_id)
-                        else:
-                            movie_actor[movie_id] = set([actor_id])
 
-                    actors.append(Actor(
-                        id=a.get('id'),
-                        name=a.get('name')
-                    ))
-            if len(actors) > 0:
-                Actor.objects.bulk_create(actors)
-        else:
-            print('status_code={}, url={}, message={}'.format(
-                response.status_code, response.url, response.text))
+        def _refresh_actors():
+            nonlocal movie_actor
+            response = requests.get(settings.API_BASE_URL + '/people')
+            if response.status_code == 200:
+                result = response.json()
+                ids = Actor.objects.values_list('id', flat=True)
+                actors = []
+                for a in result:
+                    actor_id = a.get('id')
+                    if actor_id not in ids:
+                        for f in a.get('films'):
+                            movie_id = f[f.rfind('/') + 1:]
+                            mar = movie_actor.get(movie_id)
+                            if mar:
+                                mar.add(actor_id)
+                            else:
+                                movie_actor[movie_id] = set([actor_id])
 
-        response = requests.get(settings.API_BASE_URL + '/films')
-        if response.status_code == 200:
-            result = response.json()
-            ids = Movie.objects.values_list('id', flat=True)
-            movies = []
-            for m in result:
-                if m.get('id') not in ids:
-                    movies.append(Movie(
-                        id=m.get('id'),
-                        title=m.get('title'),
-                        description=m.get('description'),
-                        director=m.get('director'),
-                        producer=m.get('producer'),
-                        release_date=m.get('release_date'),
-                        rt_score=m.get('rt_score'),
-                    ))
-            if len(movies) > 0:
-                Movie.objects.bulk_create(movies)
+                        actors.append(Actor(
+                            id=a.get('id'),
+                            name=a.get('name')
+                        ))
+                if len(actors) > 0:
+                    Actor.objects.bulk_create(actors)
+            else:
+                print('status_code={}, url={}, message={}'.format(
+                    response.status_code, response.url, response.text))
+                return False
 
-                # populate many to many relational model
-                through_model = Movie.people.through
-                for key, value in movie_actor.items():
-                    movie_actors = Actor.objects.filter(pk__in=list(value))
-                    tm = [through_model(actor_id=actor.pk, movie_id=key) for actor in movie_actors]
-                    through_model.objects.bulk_create(tm)
+            return True
 
-        else:
-            print('status_code={}, url={}, message={}'.format(
-                response.status_code, response.url, response.text))
+        def _refresh_movies():
+            response = requests.get(settings.API_BASE_URL + '/films')
+            if response.status_code == 200:
+                result = response.json()
+                ids = Movie.objects.values_list('id', flat=True)
+                movies = []
+                for m in result:
+                    if m.get('id') not in ids:
+                        movies.append(Movie(
+                            id=m.get('id'),
+                            title=m.get('title'),
+                            description=m.get('description'),
+                            director=m.get('director'),
+                            producer=m.get('producer'),
+                            release_date=m.get('release_date'),
+                            rt_score=m.get('rt_score'),
+                        ))
+                if len(movies) > 0:
+                    Movie.objects.bulk_create(movies)
+            else:
+                print('status_code={}, url={}, message={}'.format(
+                    response.status_code, response.url, response.text))
+                return False
 
-            # skip refresh time update if requests failed
-            return
+            return True
 
-        timestamp.save()
+        if _refresh_actors() and _refresh_movies():
+            # populate many to many relational model
+            through_model = Movie.people.through
+            for key, value in movie_actor.items():
+                movie_actors = Actor.objects.filter(pk__in=list(value))
+                tm = [through_model(actor_id=actor.pk, movie_id=key) for actor in movie_actors]
+                through_model.objects.bulk_create(tm)
+
+            timestamp.save()
